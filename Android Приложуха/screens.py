@@ -159,6 +159,9 @@ class TestSelectionScreen(Screen):
         # Сохраняем выбранный test_id
         self.selected_test_id = test_id
         # Переходим на экран теста
+        test_screen = TestScreen(name='test')
+        test_screen.test_id = test_id
+        self.manager.add_widget(test_screen)
         self.manager.current = 'test'
         popup.dismiss()
 
@@ -167,13 +170,10 @@ class TestScreen(Screen):
     def __init__(self, **kwargs):
         super(TestScreen, self).__init__(**kwargs)
         self.test_id = kwargs.get('test_id')
-        self.manager = kwargs.get('manager')
-
-        # Добавьте здесь другую инициализацию экрана, если необходимо
 
     def on_enter(self):
         # Вызывается при входе на экран
-        pass
+        print("Test ID:", self.test_id)
 
     def on_leave(self):
         # Вызывается при выходе с экрана
@@ -181,11 +181,10 @@ class TestScreen(Screen):
 
 
 
-
 class ResultsScreen(Screen):
     def __init__(self, **kwargs):
         super(ResultsScreen, self).__init__(**kwargs)
-        # Your implementation for displaying test results
+        # результаты потом реализую
 
 class CreateTestScreen(Screen):
     def __init__(self, current_test_id=None, **kwargs):
