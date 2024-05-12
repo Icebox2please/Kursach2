@@ -28,10 +28,10 @@ class TestApp(App):
         return self.sm
 
     def on_test_selected(self, instance, test_id):
-        # Создаем экран TestScreen с переданным test_id и manager
-        test_screen = TestScreen(name='test', test_id=test_id, manager=self.sm)
+        print("Selected Test ID:", test_id)  # Добавим эту строку для отладочного вывода
+        app = App.get_running_app()  # Получаем экземпляр приложения
+        test_screen = TestScreen(name='test', test_id=test_id, manager=self.sm, database=app.database)  # Передаем атрибут database в TestScreen
         self.sm.add_widget(test_screen)
 
 if __name__ == '__main__':
     TestApp().run()
-

@@ -96,19 +96,19 @@ class Database:
         else:
             return "No question found for the specified test ID"
 
-    def load_next_question(self, test_id, current_question_id, loaded_question_ids):
+    def load_next_question(self, test_id, current_question_index, loaded_question_ids):
         query = "SELECT question FROM questions WHERE test_id=? AND id > ? AND id NOT IN ({}) ORDER BY id LIMIT 1".format(
             ','.join('?' * len(loaded_question_ids)))
-        params = (test_id, current_question_id, *loaded_question_ids)
-        print("Query:", query)  # Отладочный вывод для проверки запроса
-        print("Params:", params)  # Отладочный вывод для проверки параметров запроса
+        params = (test_id, current_question_index, *loaded_question_ids)
+        print("Query:", query)
+        print("Params:", params)
         self.cursor.execute(query, params)
         next_question = self.cursor.fetchone()
-        print("Next question:", next_question)  # Отладочный вывод для проверки результата запроса
+        print("Next question:", next_question)
         if next_question:
-            return next_question[0]  # Возвращаем текст вопроса
+            return next_question[0]
         else:
-            return None  # Возвращаем None, если следующий вопрос не найден
+            return None
 
     def get_questions_count(self, test_id):
         self.cursor.execute("SELECT COUNT(*) FROM questions WHERE test_id=?", (test_id,))
@@ -154,3 +154,8 @@ class Database:
             return result[0]  # Возвращаем имя теста из запроса
         else:
             return None  # Возвращаем None, если тест не найден
+
+    def get_questions_count(self, test_id):
+        self.cursor.execute("SELECT COUNT(*) FROM questions WHERE test_id=?", (test_id,))
+        count = self.cursor.fetchone()[0]
+        return count
