@@ -171,13 +171,13 @@ class TestSelectionScreen(Screen):
         popup.dismiss()
 
 
-
 class TestScreen(Screen):
     def __init__(self, test_id_value=None, database_instance=None, **kwargs):
         super(TestScreen, self).__init__(**kwargs)
         self.test_id_value = test_id_value
         self.database_instance = database_instance
         self.current_question_index = 0  # Индекс текущего вопроса
+        self.answers = []  # Список для хранения ответов пользователя
 
         # Создаем вертикальный контейнер для размещения элементов
         layout = BoxLayout(orientation='vertical')
@@ -195,11 +195,7 @@ class TestScreen(Screen):
         next_button.bind(on_press=self.next_question)
         layout.add_widget(next_button)
 
-        # Кнопка для возврата в меню
-        menu_button = Button(text="Back to Menu", size_hint=(None, None), size=(150, 50))
-        menu_button.bind(on_press=self.back_to_menu)
-        layout.add_widget(menu_button)
-
+        # Добавляем контейнер на экран
         self.add_widget(layout)
 
         self.load_question()  # Загружаем первый вопрос при создании экрана
@@ -211,21 +207,50 @@ class TestScreen(Screen):
             self.question_label.text = question
         else:
             self.question_label.text = "No questions found for the selected test."
-
-    def on_enter(self, *args):
-        super(TestScreen, self).on_enter()
-        print("Test ID in on_enter:", self.test_id_value)
-        print("Database in on_enter:", self.database_instance)
+            self.ids.next_question_button.text = "Finish Test"
 
     def next_question(self, instance):
-        # Добавьте здесь логику для перехода к следующему вопросу
+        # Получаем ответ пользователя
+        user_answer = self.answer_input.text
+        # Добавляем его в список ответов
+        self.answers.append(user_answer)
+
+        # Загружаем следующий вопрос
+        test_id = self.test_id_value
         self.current_question_index += 1
-        self.load_question()  # Загружаем следующий вопрос
+        question = self.database_instance.load_next_question(test_id, self.current_question_index, self.answers)
+        if question:
+            self.question_label.text = question
+            self.answer_input.text = ""  # Очищаем поле ввода
+        else:
+            # Если вопросы закончились, изменяем поведение кнопки "Next Question"
+            instance.text = "Finish Test"
+            instance.unbind(on_press=self.next_question)
+            instance.bind(on_press=self.finish_test)
+
+    def finish_test(self, instance):
+        # Переходим на экран меню
+        self.manager.current = "main_menu"
+
+        # Проверяем, были ли сохранены ответы
+        if self.answers:
+            # Выводим результаты теста
+            print("Test finished. User answers:")
+            for i, answer in enumerate(self.answers):
+                print(f"Question {i + 1}: {answer}")
+
+            # Сохраняем результаты теста в базе данных или выполняем другие действия по необходимости
+            # Например:
+            # self.database_instance.save_test_results(self.test_id_value, self.answers)
+        else:
+            print("No answers were provided.")
+
+        # Выводим содержимое списка сохраненных ответов
+        print("Saved answers:", self.answers)
 
     def back_to_menu(self, instance):
         # Добавьте здесь логику для возврата в меню
         pass
-
 
 
 class ResultsScreen(Screen):

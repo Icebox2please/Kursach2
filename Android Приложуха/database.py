@@ -110,11 +110,6 @@ class Database:
         else:
             return None
 
-    def get_questions_count(self, test_id):
-        self.cursor.execute("SELECT COUNT(*) FROM questions WHERE test_id=?", (test_id,))
-        count = self.cursor.fetchone()[0]
-        return count
-
     def save_test_result(self, test_id, correct_answers, total_questions):
         self.cursor.execute(
             '''INSERT INTO results (test_id, correct_answers, total_questions) VALUES (?, ?, ?)''',
