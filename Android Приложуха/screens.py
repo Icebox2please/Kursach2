@@ -7,6 +7,8 @@ from kivy.uix.popup import Popup
 from database import Database
 from kivy.uix.boxlayout import BoxLayout
 from kivy.clock import Clock
+from kivy.event import EventDispatcher
+from kivy.app import App
 
 class ActionSelectionScreen(Screen):
     def __init__(self, **kwargs):
@@ -128,16 +130,17 @@ class MainMenuScreen(Screen):
 
 
 class TestSelectionScreen(Screen):
+    selected_test_id = None
+
     def __init__(self, **kwargs):
         super(TestSelectionScreen, self).__init__(**kwargs)
-        self.selected_test_id = None  # Атрибут для хранения выбранного test_id
-
         layout = BoxLayout(orientation='vertical')
         layout.add_widget(Button(text='Choose Test', on_press=self.show_test_selection))
         self.add_widget(layout)
 
     def show_test_selection(self, instance):
-        db = Database("my_database.db")  # Путь к вашей базе данных
+        app = App.get_running_app()  # Получаем экземпляр текущего приложения
+        db = app.database  # Получаем экземпляр базы данных из текущего приложения
         available_tests = db.get_available_tests()
 
         if not available_tests:
@@ -156,11 +159,10 @@ class TestSelectionScreen(Screen):
         popup.open()
 
     def select_test(self, test_id, popup):
-        # Сохраняем выбранный test_id
         self.selected_test_id = test_id
-        # Переходим на экран теста
-        test_screen = TestScreen(name='test')
-        test_screen.test_id = test_id
+        app = App.get_running_app()  # Получаем текущий экземпляр приложения
+        test_screen = TestScreen(name='test', test_id_value=test_id,
+                                 database_instance=app.database)  # Передаем базу данных из текущего экземпляра приложения
         self.manager.add_widget(test_screen)
         self.manager.current = 'test'
         popup.dismiss()
@@ -168,101 +170,41 @@ class TestSelectionScreen(Screen):
 
 
 class TestScreen(Screen):
-    def __init__(self, **kwargs):
+    def __init__(self, test_id_value=None, database_instance=None, **kwargs):
         super(TestScreen, self).__init__(**kwargs)
-        self.test_id = kwargs.get('test_id')
-        self.database = kwargs.get('database')
-        self.current_question_index = 0
-        self.answers = []
-        print("Constructor Test ID:", self.test_id)  # Отладочная информация в конструкторе
-        print("Database:", self.database)
-
-    def on_enter(self):
-        # Вызывается при входе на экран
-        print("Test ID in on_enter:", self.test_id)  # Отладочная информация в методе on_enter
-        print("Database2:", self.database)
-
-        # Получаем вопрос для выбранного теста из базы данных
-        question_text = self.get_question_for_test(self.test_id)
-
-        # Создаем виджеты для отображения вопроса и ввода ответа
-        self.question_label = Label(text=question_text)
-        self.answer_input = TextInput(hint_text='Enter your answer')
-
-        # Создаем кнопки
-        self.next_question_button = Button(text='Next Question', on_press=self.next_question)
-        self.exit_button = Button(text='Exit to Menu', on_press=self.exit_to_menu)
-
-        # Создаем контейнер для размещения виджетов
+        self.test_id_value = test_id_value
+        self.database_instance = database_instance
         layout = BoxLayout(orientation='vertical')
-        layout.add_widget(self.question_label)
-        layout.add_widget(self.answer_input)
-        layout.add_widget(self.next_question_button)
-        layout.add_widget(self.exit_button)
 
-        # Добавляем контейнер на экран
+        self.question_label = Label(text="Question Text")
+        layout.add_widget(self.question_label)
+
+        self.answer_input = TextInput(hint_text="Enter your answer here")
+        layout.add_widget(self.answer_input)
+
+        next_button = Button(text="Next Question")
+        next_button.bind(on_press=self.next_question)
+        layout.add_widget(next_button)
+
+        menu_button = Button(text="Back to Menu")
+        menu_button.bind(on_press=self.back_to_menu)
+        layout.add_widget(menu_button)
+
         self.add_widget(layout)
 
+    def on_enter(self, *args):
+        print("Test ID in on_enter:", self.test_id_value)
+        print("Database in on_enter:", self.database_instance)
+
     def next_question(self, instance):
-        # Получаем ответ пользователя
-        current_answer = self.answer_input.text
-
-        # Сохраняем ответ на прошлый вопрос
-        self.answers.append(current_answer)
-
-        # Очищаем поле ввода ответа
-        self.answer_input.text = ''
-
-        # Увеличиваем индекс текущего вопроса
-        self.current_question_index += 1
-
-        # Получаем количество вопросов в тесте (предполагая, что у вас есть метод для этого в классе Database)
-        total_questions = self.get_total_questions_in_test(self.test_id)
-
-        if self.current_question_index < total_questions:
-            # Если еще есть вопросы в тесте, показываем следующий вопрос
-            next_question_text = self.get_next_question_text()
-            self.question_label.text = next_question_text
-        else:
-            # Если вопросы закончились, изменяем текст кнопки на "Завершить тест"
-            self.next_question_button.text = 'Finish Test'
-            # Удаляем текущий экземпляр TestScreen из ScreenManager
-            self.manager.remove_widget(self)
-            # Сохраняем последний ответ
-            self.answers.append(current_answer)
-            # Обработка завершения теста, например, сохранение результатов и переход на экран меню
-            self.finish_test()
-
-    def get_next_question_text(self):
-        # Получаем следующий вопрос для указанного test_id и индекса текущего вопроса из базы данных
-        next_question_text = self.get_question_by_index(self.test_id, self.current_question_index)
-        return next_question_text
-
-    def finish_test(self):
-        # Обработка завершения теста, например, сохранение результатов и переход на экран меню
+        # Добавьте здесь логику для перехода на следующий вопрос
         pass
 
-    def get_total_questions_in_test(self, test_id):
-        total_questions = self.database.get_questions_count(test_id)  # Используем объект Database для вызова метода
-        return total_questions
-
-    def get_question_by_index(self, test_id, index):
-        # Получаем вопрос для указанного test_id и индекса из базы данных (предполагая, что у вас есть метод для этого в классе Database)
-        question_text = self.get_question_by_index_from_database(test_id, index)
-        return question_text
-
-    def exit_to_menu(self, instance):
-        # Обработка нажатия кнопки "Выйти в меню"
+    def back_to_menu(self, instance):
+        # Добавьте здесь логику для возврата в меню
         pass
 
-    def get_question_for_test(self, test_id):
-        # Получаем экземпляр базы данных
-        db = Database("my_database.db")  # Путь к вашей базе данных
 
-        # Получаем вопрос для указанного test_id из базы данных
-        question = db.load_question_from_test(test_id)
-
-        return question
 
 
 class ResultsScreen(Screen):

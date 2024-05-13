@@ -1,5 +1,9 @@
 from kivy.app import App
 from kivy.uix.screenmanager import ScreenManager
+from kivy.uix.popup import Popup
+from kivy.uix.label import Label
+from kivy.uix.button import Button
+from kivy.uix.boxlayout import BoxLayout
 from screens import MainMenuScreen, InstructionsScreen, RegisterScreen, LoginScreen, ActionSelectionScreen, CreateTestScreen, TestScreen, TestSelectionScreen
 from database import Database
 
@@ -14,7 +18,6 @@ class TestApp(App):
 
         # Создаем экземпляр TestSelectionScreen с именем 'test_selection'
         test_selection_screen = TestSelectionScreen(name='test_selection')
-        test_selection_screen.bind(on_test_selected=self.on_test_selected)
 
         # Добавление экранов в ScreenManager
         self.sm.add_widget(ActionSelectionScreen(name='action_selection'))
@@ -26,12 +29,6 @@ class TestApp(App):
         self.sm.add_widget(test_selection_screen)  # Добавляем TestSelectionScreen с именем 'test_selection'
 
         return self.sm
-
-    def on_test_selected(self, instance, test_id):
-        print("Selected Test ID:", test_id)  # Добавим эту строку для отладочного вывода
-        app = App.get_running_app()  # Получаем экземпляр приложения
-        test_screen = TestScreen(name='test', test_id=test_id, manager=self.sm, database=app.database)  # Передаем атрибут database в TestScreen
-        self.sm.add_widget(test_screen)
 
 if __name__ == '__main__':
     TestApp().run()
