@@ -9,6 +9,9 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.clock import Clock
 from kivy.event import EventDispatcher
 from kivy.app import App
+from kivy.properties import ObjectProperty
+from kivy.metrics import dp
+
 
 class ActionSelectionScreen(Screen):
     def __init__(self, **kwargs):
@@ -174,36 +177,54 @@ class TestScreen(Screen):
         super(TestScreen, self).__init__(**kwargs)
         self.test_id_value = test_id_value
         self.database_instance = database_instance
+        self.current_question_index = 0  # Индекс текущего вопроса
+
+        # Создаем вертикальный контейнер для размещения элементов
         layout = BoxLayout(orientation='vertical')
 
-        self.question_label = Label(text="Question Text")
+        # Метка с вопросом
+        self.question_label = Label(text="", font_size=20, size_hint=(1, None), height=dp(200), halign='center')
         layout.add_widget(self.question_label)
 
-        self.answer_input = TextInput(hint_text="Enter your answer here")
+        # Поле для ввода ответа
+        self.answer_input = TextInput(hint_text="Enter your answer", multiline=False)
         layout.add_widget(self.answer_input)
 
-        next_button = Button(text="Next Question")
+        # Кнопка для перехода к следующему вопросу
+        next_button = Button(text="Next Question", size_hint=(None, None), size=(150, 50))
         next_button.bind(on_press=self.next_question)
         layout.add_widget(next_button)
 
-        menu_button = Button(text="Back to Menu")
+        # Кнопка для возврата в меню
+        menu_button = Button(text="Back to Menu", size_hint=(None, None), size=(150, 50))
         menu_button.bind(on_press=self.back_to_menu)
         layout.add_widget(menu_button)
 
         self.add_widget(layout)
 
+        self.load_question()  # Загружаем первый вопрос при создании экрана
+
+    def load_question(self):
+        test_id = self.test_id_value
+        question = self.database_instance.load_question_from_test(test_id)
+        if question:
+            self.question_label.text = question
+        else:
+            self.question_label.text = "No questions found for the selected test."
+
     def on_enter(self, *args):
+        super(TestScreen, self).on_enter()
         print("Test ID in on_enter:", self.test_id_value)
         print("Database in on_enter:", self.database_instance)
 
     def next_question(self, instance):
-        # Добавьте здесь логику для перехода на следующий вопрос
-        pass
+        # Добавьте здесь логику для перехода к следующему вопросу
+        self.current_question_index += 1
+        self.load_question()  # Загружаем следующий вопрос
 
     def back_to_menu(self, instance):
         # Добавьте здесь логику для возврата в меню
         pass
-
 
 
 
