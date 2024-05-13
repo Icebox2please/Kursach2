@@ -164,19 +164,22 @@ class TestSelectionScreen(Screen):
     def select_test(self, test_id, popup):
         self.selected_test_id = test_id
         app = App.get_running_app()  # Получаем текущий экземпляр приложения
+        first_question_index = app.database.get_first_question_index(
+            test_id)  # Получаем номер первого вопроса для выбранного теста
         test_screen = TestScreen(name='test', test_id_value=test_id,
-                                 database_instance=app.database)  # Передаем базу данных из текущего экземпляра приложения
+                                 database_instance=app.database,
+                                 current_question_index=first_question_index)  # Передаем базу данных из текущего экземпляра приложения и номер первого вопроса
         self.manager.add_widget(test_screen)
         self.manager.current = 'test'
         popup.dismiss()
 
 
 class TestScreen(Screen):
-    def __init__(self, test_id_value=None, database_instance=None, **kwargs):
+    def __init__(self, test_id_value=None, database_instance=None, current_question_index=0, **kwargs):
         super(TestScreen, self).__init__(**kwargs)
         self.test_id_value = test_id_value
         self.database_instance = database_instance
-        self.current_question_index = 0  # Индекс текущего вопроса
+        self.current_question_index = current_question_index
         self.answers = []  # Список для хранения ответов пользователя
 
         # Создаем вертикальный контейнер для размещения элементов
@@ -202,7 +205,8 @@ class TestScreen(Screen):
 
     def load_question(self):
         test_id = self.test_id_value
-        question = self.database_instance.load_question_from_test(test_id)
+        question = self.database_instance.load_question_from_test(test_id, self.current_question_index) # Используем текущий индекс вопроса
+        print("current_question_index:", self.current_question_index)
         if question:
             self.question_label.text = question
         else:
@@ -218,6 +222,7 @@ class TestScreen(Screen):
         # Загружаем следующий вопрос
         test_id = self.test_id_value
         self.current_question_index += 1
+        print("Current question index:", self.current_question_index)  # Добавляем отладочный вывод
         question = self.database_instance.load_next_question(test_id, self.current_question_index, self.answers)
         if question:
             self.question_label.text = question
@@ -249,8 +254,8 @@ class TestScreen(Screen):
         print("Saved answers:", self.answers)
 
     def back_to_menu(self, instance):
-        # Добавьте здесь логику для возврата в меню
-        pass
+        self.manager.current = "main_menu"
+
 
 
 class ResultsScreen(Screen):

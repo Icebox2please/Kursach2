@@ -87,8 +87,9 @@ class Database:
         test = self.cursor.fetchone()
         return test
 
-    def load_question_from_test(self, test_id):
-        self.cursor.execute("SELECT question FROM questions WHERE test_id=?", (test_id,))
+    def load_question_from_test(self, test_id, current_question_index):
+        self.cursor.execute("SELECT question FROM questions WHERE test_id=? AND id=?",
+                            (test_id, current_question_index))
         question = self.cursor.fetchone()
         print("Question:", question)  # Добавим эту строку для отладочного вывода
         if question:
@@ -97,7 +98,8 @@ class Database:
             return "No question found for the specified test ID"
 
     def load_next_question(self, test_id, current_question_index, loaded_question_ids):
-        query = "SELECT question FROM questions WHERE test_id=? AND id > ? AND id NOT IN ({}) ORDER BY id LIMIT 1".format(
+        print("Loaded question IDs:", loaded_question_ids)  # Добавляем отладочный вывод
+        query = "SELECT question FROM questions WHERE test_id=? AND id >= ? AND id NOT IN ({}) ORDER BY id LIMIT 1".format(
             ','.join('?' * len(loaded_question_ids)))
         params = (test_id, current_question_index, *loaded_question_ids)
         print("Query:", query)
@@ -154,3 +156,8 @@ class Database:
         self.cursor.execute("SELECT COUNT(*) FROM questions WHERE test_id=?", (test_id,))
         count = self.cursor.fetchone()[0]
         return count
+
+    def get_first_question_index(self, test_id):
+        self.cursor.execute("SELECT MIN(id) FROM questions WHERE test_id=?", (test_id,))
+        first_question_index = self.cursor.fetchone()[0]
+        return first_question_index
