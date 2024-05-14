@@ -19,7 +19,7 @@ class TestApp(App):
         # Создаем экземпляр TestSelectionScreen с именем 'test_selection'
         test_selection_screen = TestSelectionScreen(name='test_selection')
 
-        results_screen = ResultsScreen(name='results')
+        results_screen = ResultsScreen(name='results', database=self.database)
 
         # Добавление экранов в ScreenManager
         self.sm.add_widget(ActionSelectionScreen(name='action_selection'))

@@ -11,6 +11,7 @@ from kivy.event import EventDispatcher
 from kivy.app import App
 from kivy.properties import ObjectProperty
 from kivy.metrics import dp
+from kivy.uix.dropdown import DropDown
 
 
 class ActionSelectionScreen(Screen):
@@ -272,7 +273,71 @@ class TestScreen(Screen):
 
 
 class ResultsScreen(Screen):
-    pass
+    def __init__(self, database, **kwargs):
+        super(ResultsScreen, self).__init__(**kwargs)
+        self.database = database
+
+        # Добавим выпадающий список для выбора теста
+        self.dropdown = DropDown()
+
+        # По умолчанию покажем заглушку
+        self.results_label = Label(text="Select a test to view results", font_size=20)
+
+        # Создаем главный макет, используя вертикальное расположение
+        main_layout = BoxLayout(orientation='vertical')
+
+        # Создаем макет для кнопки Select Test, используя горизонтальное расположение
+        button_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=50)
+
+        # Добавляем кнопку для открытия списка тестов
+        self.dropdown_button = Button(text='Select Test')
+        self.dropdown_button.bind(on_release=self.dropdown.open)
+
+        # Добавляем кнопку в макет
+        button_layout.add_widget(self.dropdown_button)
+
+        # Добавляем макет с кнопкой в главный макет
+        main_layout.add_widget(button_layout)
+
+        # Добавляем метку для отображения результатов в главный макет
+        main_layout.add_widget(self.results_label)
+
+        # Добавляем главный макет на экран
+        self.add_widget(main_layout)
+
+        # Загружаем список тестов из базы данных
+        self.load_tests()
+
+    def load_tests(self):
+        # Получаем список доступных тестов из базы данных
+        tests = self.database.get_available_tests()
+
+        # Добавляем каждый тест в выпадающий список
+        for test_id, test_name in tests:
+            btn = Button(text=test_name, size_hint_y=None, height=44)
+            btn.bind(on_release=lambda btn: self.show_results(self.database.get_test_id_by_name(btn.text)))
+            self.dropdown.add_widget(btn)
+
+    def show_results(self, selected_test_id):
+        # Загружаем результаты выбранного теста из базы данных
+        results = self.database.load_results_for_test(selected_test_id)
+
+        # Очищаем предыдущие результаты из метки
+        self.results_label.text = ""
+
+        # Проверяем, есть ли результаты для выбранного теста
+        if results:
+            # Добавляем заголовок с информацией о тесте
+            self.results_label.text += "Results for Test {}: \n".format(selected_test_id)
+
+            # Перебираем результаты и добавляем их в метку
+            for result in results:
+                self.results_label.text += "Result ID from bd: {}, Correct Answers: {}, Total Questions: {}\n".format(
+                    result[0], result[2], result[3])
+        else:
+            # Если результатов нет, отображаем соответствующее сообщение
+            self.results_label.text = "No results available for selected test"
+
 
 class CreateTestScreen(Screen):
     def __init__(self, current_test_id=None, **kwargs):
