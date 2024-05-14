@@ -118,13 +118,13 @@ class Database:
             (test_id, correct_answers, total_questions))
         self.conn.commit()
 
-    def load_answer_for_question(self, question):
-        self.cursor.execute("SELECT answer FROM questions WHERE question=?", (question,))
-        result = self.cursor.fetchone()
-        if result:
-            return result[0]  # Возвращаем правильный ответ из запроса
-        else:
-            return None  # Возвращаем None, если ответ не найден
+    def load_answers_for_test(self, test_id):
+        self.cursor.execute("SELECT answer FROM questions WHERE test_id=?", (test_id,))
+        results = self.cursor.fetchall()
+        answers = [result[0] for result in results]
+        print("correct ans", answers)
+        return answers
+
 
     def get_user_id(self, username):
         self.cursor.execute("SELECT id FROM users WHERE username=?", (username,))

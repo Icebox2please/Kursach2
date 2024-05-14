@@ -115,10 +115,13 @@ class MainMenuScreen(Screen):
         layout = GridLayout(cols=1)
         layout.add_widget(Label(text='Main Menu', font_size=50))
         layout.add_widget(Button(text='Start Test', on_press=self.show_test_selection))  # Изменено на вызов метода show_test_selection
-        layout.add_widget(Button(text='View Results'))
+        layout.add_widget(Button(text='View Results', on_press=self.show_results))
         layout.add_widget(Button(text='Instructions', on_press=self.show_instructions))
         layout.add_widget(Button(text='Create Test', on_press=self.create_test))
         self.add_widget(layout)
+
+    def show_results(self, instance):
+        self.manager.current = 'results'
 
     def show_test_selection(self, instance):
         self.manager.current = 'test_selection'  # Переходим на экран с выбором тестов
@@ -244,14 +247,23 @@ class TestScreen(Screen):
             for i, answer in enumerate(self.answers):
                 print(f"Question {i + 1}: {answer}")
 
+            # Загружаем правильные ответы для выбранного теста
+            correct_answers = self.database_instance.load_answers_for_test(self.test_id_value)
+
+            # Сравниваем ответы пользователя с правильными ответами
+            correct_count = sum(1 for user_answer, correct_answer in zip(self.answers, correct_answers) if
+                                user_answer == correct_answer)
+            total_questions = len(correct_answers)
+            print(f"Correct Answers: {correct_count}/{total_questions}")
+
             # Сохраняем результаты теста в базе данных или выполняем другие действия по необходимости
-            # Например:
-            # self.database_instance.save_test_results(self.test_id_value, self.answers)
+
         else:
             print("No answers were provided.")
 
         # Выводим содержимое списка сохраненных ответов
         print("Saved answers:", self.answers)
+
 
     def back_to_menu(self, instance):
         self.manager.current = "main_menu"
@@ -259,9 +271,7 @@ class TestScreen(Screen):
 
 
 class ResultsScreen(Screen):
-    def __init__(self, **kwargs):
-        super(ResultsScreen, self).__init__(**kwargs)
-        # результаты потом реализую
+    pass
 
 class CreateTestScreen(Screen):
     def __init__(self, current_test_id=None, **kwargs):
