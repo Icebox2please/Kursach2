@@ -256,7 +256,8 @@ class TestScreen(Screen):
             total_questions = len(correct_answers)
             print(f"Correct Answers: {correct_count}/{total_questions}")
 
-            # Сохраняем результаты теста в базе данных или выполняем другие действия по необходимости
+            # Сохраняем результаты теста в базе данных
+            self.database_instance.save_test_result(self.test_id_value, correct_count, total_questions)
 
         else:
             print("No answers were provided.")
